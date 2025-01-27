@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinLengthValidator
 
 class Project(models.Model):
     PROJECT_STATUS = (
@@ -20,7 +21,7 @@ class Project(models.Model):
     address = models.CharField(max_length=255)
     started_at = models.DateField()
     finished_at = models.DateField(blank=True, null=True)
-    status = models.CharField(max_length=50, choices=PROJECT_STATUS, default="Off Plan")
+    status = models.CharField(max_length=20, choices=PROJECT_STATUS, default="Off Plan")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
@@ -51,11 +52,20 @@ class Customer(models.Model):
         default=uuid.uuid4,
         editable=False
     )
-    rut = models.CharField(max_length=12, unique=True)
+    rut = models.CharField(
+        max_length=9,
+        validators=[MinLengthValidator(8)],
+        unique=True
+    )
     name = models.CharField(max_length=100)
     lastname = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    phone = models.CharField(
+        max_length=12,
+        validators=[MinLengthValidator(12)],
+        blank=True,
+        null=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -92,12 +102,12 @@ class Unit(models.Model):
         null=True,
         blank=True
     )
-    unit_number = models.CharField(max_length=50)
-    unit_type = models.CharField(max_length=50, choices=UNIT_TYPE)
-    square_meters = models.DecimalField(max_digits=10, decimal_places=2)
-    price = models.IntegerField()
+    unit_number = models.CharField(max_length=10)
+    unit_type = models.CharField(max_length=20, choices=UNIT_TYPE)
+    square_meters = models.DecimalField(max_digits=5, decimal_places=2)
+    price = models.IntegerField(default=0)
     reservation_deposit = models.IntegerField(default=0)
-    unit_status = models.CharField(max_length=50, choices=UNIT_STATUS, default='Available')
+    unit_status = models.CharField(max_length=20, choices=UNIT_STATUS, default='Available')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
