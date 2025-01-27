@@ -45,7 +45,7 @@ class Project(models.Model):
         return self.name
 
 
-class Client(models.Model):
+class Customer(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -85,8 +85,8 @@ class Unit(models.Model):
         related_name='units',
         on_delete=models.CASCADE
     )
-    client = models.ForeignKey(
-        Client,
+    customer = models.ForeignKey(
+        Customer,
         related_name='units',
         on_delete=models.SET_NULL,
         null=True,
