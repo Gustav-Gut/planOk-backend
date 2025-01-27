@@ -13,7 +13,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'address']  # Búsqueda
+    search_fields = ['name', 'address', 'status']  # Búsqueda
     ordering_fields = ['created_at', 'name', 'started_at', 'finished_at']
     ordering = ['-created_at']
 
