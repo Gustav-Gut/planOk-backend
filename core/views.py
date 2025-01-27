@@ -5,12 +5,12 @@ from .serializers import (
     UnitSerializer,
     CustomerSerializer
 )
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all().order_by('-created_at')
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'address', 'status']  # Búsqueda
@@ -21,7 +21,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all().order_by('-created_at')
     serializer_class = UnitSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['unit_number', 'unit_status', 'unit_type', 'reservation_deposit']
@@ -32,7 +32,7 @@ class UnitViewSet(viewsets.ModelViewSet):
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('-created_at')
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['rut', 'name', 'lastname', 'email', 'phone']
