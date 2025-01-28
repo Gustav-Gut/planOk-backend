@@ -179,3 +179,5 @@ SPECTACULAR_SETTINGS = {
         {'Bearer': []}
     ],
 }
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
