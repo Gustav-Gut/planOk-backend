@@ -3,8 +3,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
-from ..models.models import Project, Unit, Customer
-from ..serializers import (
+
+from ..services.project_service import ProjectService
+from ..services.unit_service import UnitService
+from ..services.customer_service import CustomerService
+from ..models.models import Unit, Customer
+from ..serializers.serializers import (
     ProjectSerializer,
     UnitSerializer,
     CustomerSerializer
@@ -191,14 +195,60 @@ from .filters import ProjectFilter
     )
 )
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all().order_by('-created_at')
-    serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
 
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = ProjectFilter
     ordering_fields = ['created_at', 'started_at', 'finished_at']
     ordering = ['-created_at']
+
+    def list(self, request):
+        queryset = ProjectService.get_projects()
+        queryset = self.filter_queryset(queryset)
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = ProjectSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = ProjectSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        project = ProjectService.get_project_by_id(pk)
+        if not project:
+            return Response({"detail": "Proyecto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProjectSerializer(project)
+        return Response(serializer.data)
+
+    def create(self, request):
+        project = ProjectService.create_project(request.data)
+        serializer = ProjectSerializer(project)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, pk=None):
+        project = ProjectService.update_project(pk, request.data)
+        if not project:
+            return Response({"detail": "Proyecto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProjectSerializer(project)
+        return Response(serializer.data)
+
+    def partial_update(self, request, pk=None):
+        project = ProjectService.partial_update_project(pk, request.data)
+        if not project:
+            return Response({"detail": "Proyecto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProjectSerializer(project)
+        return Response(serializer.data)
+
+    def destroy(self, request, pk=None):
+        deleted = ProjectService.delete_project(pk)
+        if not deleted:
+            return Response({"detail": "Proyecto no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def filter_queryset(self, queryset):
+        for backend in list(self.filter_backends):
+            queryset = backend().filter_queryset(self.request, queryset, self)
+        return queryset
 
 @extend_schema_view(
     list=extend_schema(
@@ -402,27 +452,70 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ),
 )
 class UnitViewSet(viewsets.ModelViewSet):
-    queryset = Unit.objects.all().order_by('-created_at')
-    serializer_class = UnitSerializer
     permission_classes = [IsAuthenticated]
-
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['unit_status', 'unit_type', 'project']
     ordering_fields = ['created_at', 'price']
     ordering = ['-created_at']
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(UnitService.get_all_units())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = UnitSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = UnitSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        try:
+            unit = UnitService.get_unit_by_id(pk)
+            serializer = UnitSerializer(unit)
+            return Response(serializer.data)
+        except Unit.DoesNotExist:
+            return Response({'error': 'Unit not found'}, status=status.HTTP_404_NOT_FOUND)
+
     def create(self, request, *args, **kwargs):
         data = request.data
-        
-        # Si es una lista, asumimos creación múltiple
         if isinstance(data, list):
-            serializer = self.get_serializer(data=data, many=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            created_units = UnitService.create_multiple_units(data)
+            serializer = UnitSerializer(created_units, many=True)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        # Si es un dict, usamos la creación por defecto de un solo objeto
-        return super().create(request, *args, **kwargs)
+        else:
+            unit = UnitService.create_unit(data)
+            serializer = UnitSerializer(unit)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, pk=None, *args, **kwargs):
+        try:
+            unit = UnitService.get_unit_by_id(pk)
+            serializer = UnitSerializer(unit, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            updated_unit = UnitService.update_unit(unit, serializer.validated_data)
+            serializer = UnitSerializer(updated_unit)
+            return Response(serializer.data)
+        except Unit.DoesNotExist:
+            return Response({'error': 'Unit not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def partial_update(self, request, pk=None, *args, **kwargs):
+        try:
+            unit = UnitService.get_unit_by_id(pk)
+            serializer = UnitSerializer(unit, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            updated_unit = UnitService.update_unit(unit, serializer.validated_data)
+            serializer = UnitSerializer(updated_unit)
+            return Response(serializer.data)
+        except Unit.DoesNotExist:
+            return Response({'error': 'Unit not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def destroy(self, request, pk=None, *args, **kwargs):
+        try:
+            unit = UnitService.get_unit_by_id(pk)
+            UnitService.delete_unit(unit)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Unit.DoesNotExist:
+            return Response({'error': 'Unit not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @extend_schema_view(
@@ -551,11 +644,46 @@ class UnitViewSet(viewsets.ModelViewSet):
     )
 )
 class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.all().order_by('-created_at')
-    serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
-
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['rut', 'name', 'lastname', 'email', 'phone']
     ordering_fields = ['created_at']
     ordering = ['-created_at']
+
+    # Si quieres seguir usando el QuerySet para list/retrieve automáticos, mantenlo
+    queryset = Customer.objects.all().order_by('-created_at')
+    serializer_class = CustomerSerializer
+
+    def create(self, request, *args, **kwargs):
+        customer = CustomerService.create_customer(request.data)
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            customer = CustomerService.get_customer_by_id(kwargs['pk'])
+        except Customer.DoesNotExist:
+            return Response({"detail": "Cliente no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        updated_customer = CustomerService.update_customer(customer, request.data, partial=False)
+        serializer = CustomerSerializer(updated_customer)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        try:
+            customer = CustomerService.get_customer_by_id(kwargs['pk'])
+        except Customer.DoesNotExist:
+            return Response({"detail": "Cliente no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        updated_customer = CustomerService.update_customer(customer, request.data, partial=True)
+        serializer = CustomerSerializer(updated_customer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            customer = CustomerService.get_customer_by_id(kwargs['pk'])
+        except Customer.DoesNotExist:
+            return Response({"detail": "Cliente no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        CustomerService.delete_customer(customer)
+        return Response(status=status.HTTP_204_NO_CONTENT)

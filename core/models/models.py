@@ -24,24 +24,6 @@ class Project(models.Model):
     status = models.CharField(max_length=20, choices=PROJECT_STATUS, default="Off Plan")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def clean(self):
-        # Si se marca como Finished sin tener finished_at
-        if self.status == 'Finished' and not self.finished_at:
-            raise ValidationError(
-                "Cannot mark project as 'Finished' without a 'finished_at' date."
-            )
-
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        # Si tenemos finished_at y no está en 'Finished', forzamos el status
-        if self.finished_at and self.status != 'Finished':
-            self.status = 'Finished'
-
-        # Antes de hacer el .save(), pasamos por clean() para asegurarnos que no viole la validación
-        self.full_clean()
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return self.name
 

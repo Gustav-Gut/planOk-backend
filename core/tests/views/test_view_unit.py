@@ -7,14 +7,12 @@ import json
 
 class UnitViewSetTest(APITestCase):
     def setUp(self):
-        # Crear un usuario de prueba
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.token_url = reverse('token_obtain_pair')
         token_response = self.client.post(self.token_url, {'username': 'testuser', 'password': 'testpassword'})
         self.token = token_response.data['access']
         self.auth_headers = {'HTTP_AUTHORIZATION': f'Bearer {self.token}'}
 
-        # Crear un proyecto de prueba
         self.project = Project.objects.create(
             name="Proyecto Prueba",
             address="Av. Ejemplo 123",
@@ -22,7 +20,6 @@ class UnitViewSetTest(APITestCase):
             status="Off Plan"
         )
 
-        # Crear unidades de prueba
         self.unit = Unit.objects.create(
             unit_number="1",
             unit_type="Apartment",
@@ -32,8 +29,8 @@ class UnitViewSetTest(APITestCase):
             project=self.project
         )
 
-        self.list_url = reverse('units-list')  # URL para la lista de unidades
-        self.detail_url = reverse('units-detail', args=[self.unit.id])  # URL para una unidad específica
+        self.list_url = reverse('units-list')
+        self.detail_url = reverse('units-detail', args=[self.unit.id])
 
     def test_list_units(self):
         """Prueba que se puedan listar las unidades"""
@@ -43,7 +40,7 @@ class UnitViewSetTest(APITestCase):
         self.assertEqual(response.data['results'][0]['unit_number'], "1")
 
     def test_retrieve_unit(self):
-        """Prueba que se puedan obtener los detalles de una unidad"""
+        """Prueba que se puedan obtener una unidad"""
         response = self.client.get(self.detail_url, **self.auth_headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], str(self.unit.id))
@@ -56,7 +53,7 @@ class UnitViewSetTest(APITestCase):
             "unit_type": "House",
             "square_meters": 120.0,
             "price": 300000000,
-            "status": "Available",
+            "unit_status": "Available",
             "project": str(self.project.id)
         }
         response = self.client.post(
@@ -66,7 +63,6 @@ class UnitViewSetTest(APITestCase):
             **self.auth_headers
         )
 
-        # Verifica la respuesta y el contenido creado
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Unit.objects.count(), 2)
         self.assertEqual(Unit.objects.order_by('-created_at').first().unit_number, "2A")
@@ -79,7 +75,7 @@ class UnitViewSetTest(APITestCase):
                 "unit_type": "House",
                 "square_meters": 120.0,
                 "price": 300000000,
-                "status": "Available",
+                "unit_status": "Available",
                 "project": str(self.project.id)
             },
             {
@@ -87,7 +83,7 @@ class UnitViewSetTest(APITestCase):
                 "unit_type": "Apartment",
                 "square_meters": 80.0,
                 "price": 200000000,
-                "status": "Reserved",
+                "unit_status": "Reserved",
                 "project": str(self.project.id)
             }
         ]
@@ -98,7 +94,6 @@ class UnitViewSetTest(APITestCase):
             **self.auth_headers
         )
 
-        # Verifica la respuesta y el contenido creado
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Unit.objects.count(), 3)  # Ya había una unidad en setUp, ahora hay 3
         created_units = Unit.objects.order_by('-created_at')[:2]
@@ -162,7 +157,7 @@ class UnitViewSetTest(APITestCase):
         """Prueba que se puedan ordenar las unidades por precio"""
         # Crear una segunda unidad
         Unit.objects.create(
-            unit_number=2,
+            unit_number="2",
             unit_type="House",
             square_meters=120.0,
             price=300000000,
