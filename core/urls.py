@@ -1,5 +1,5 @@
 from rest_framework import routers
-from .views import ProjectViewSet, UnitViewSet, CustomerViewSet
+from .views.views import ProjectViewSet, UnitViewSet, CustomerViewSet
 
 router = routers.DefaultRouter()
 

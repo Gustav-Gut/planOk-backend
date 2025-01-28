@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Unit, Customer
+from .models.models import Project, Unit, Customer
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
