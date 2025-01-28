@@ -17,27 +17,29 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class UnitSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
+    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all(), required=False, allow_null=True)
+
     class Meta:
         model = Unit
         fields = '__all__'
 
-    def validate(self, data):
-        unit_status = data.get('unit_status')
-        customer = data.get('customer')
+    # def validate(self, data):
+    #     unit_status = data.get('unit_status')
+    #     customer = data.get('customer')
 
-        # Validación 1: Una unidad en estado 'Sold' o 'Reserved' debe tener un customer asociado
-        if unit_status in ['Sold', 'Reserved'] and not customer:
-            raise serializers.ValidationError({
-                'customer':"Una unidad en status 'Sold' o 'Reserved' siempre debe tener un Customer asociado."
-            })
+    #     # Validación 1: Una unidad en estado 'Sold' o 'Reserved' debe tener un customer asociado
+    #     if unit_status in ['Sold', 'Reserved'] and not customer:
+    #         raise serializers.ValidationError({
+    #             'customer':"Una unidad en status 'Sold' o 'Reserved' siempre debe tener un Customer asociado."
+    #         })
 
-        # Validación 2: Si se asocia un customer, el estado de la unidad debe ser 'Sold' o 'Reserved'
-        if customer and unit_status not in ['Sold', 'Reserved']:
-            raise serializers.ValidationError({
-                'unit_status': "Una unidad con Customer asociado solo puede tener status 'Sold' or 'Reserved'."
-            })
+    #     # Validación 2: Si se asocia un customer, el estado de la unidad debe ser 'Sold' o 'Reserved'
+    #     if customer is not None and unit_status not in ['Sold', 'Reserved']:
+    #         raise serializers.ValidationError({
+    #             'unit_status': "Una unidad con Customer asociado solo puede tener status 'Sold' or 'Reserved'."
+    #         })
 
-        return data
+    #     return data
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:

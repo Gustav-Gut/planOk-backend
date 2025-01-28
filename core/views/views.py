@@ -16,7 +16,7 @@ from ..serializers.serializers import (
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .filters import ProjectFilter
+from .filters import ProjectFilter, UnitFilter
 
 @extend_schema_view(
     list=extend_schema(
@@ -454,7 +454,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class UnitViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['unit_status', 'unit_type', 'project']
+    filterset_class = UnitFilter
     ordering_fields = ['created_at', 'price']
     ordering = ['-created_at']
 
@@ -516,7 +516,11 @@ class UnitViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Unit.DoesNotExist:
             return Response({'error': 'Unit not found'}, status=status.HTTP_404_NOT_FOUND)
-
+        
+    def filter_queryset(self, queryset):
+        for backend in list(self.filter_backends):
+            queryset = backend().filter_queryset(self.request, queryset, self)
+        return queryset
 
 @extend_schema_view(
     list=extend_schema(
@@ -528,18 +532,6 @@ class UnitViewSet(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
                 description='Filtrar por RUT del cliente'
-            ),
-            OpenApiParameter(
-                name='name',
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                description='Filtrar por nombre del cliente'
-            ),
-            OpenApiParameter(
-                name='lastname',
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                description='Filtrar por apellido del cliente'
             ),
             OpenApiParameter(
                 name='email',

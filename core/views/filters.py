@@ -1,5 +1,5 @@
 import django_filters
-from ..models.models import Project
+from ..models.models import Project, Unit
 
 class ProjectFilter(django_filters.FilterSet):
     address = django_filters.CharFilter(field_name='address', lookup_expr='icontains')
@@ -10,3 +10,13 @@ class ProjectFilter(django_filters.FilterSet):
     class Meta:
         model = Project
         fields = ['address', 'status', 'name', 'started_at']
+
+class UnitFilter(django_filters.FilterSet):
+    status = django_filters.CharFilter(field_name='unit_status', lookup_expr='iexact')
+    type = django_filters.CharFilter(field_name='unit_type', lookup_expr='iexact')
+    project = django_filters.UUIDFilter(field_name='project', lookup_expr='exact')
+    ordering = django_filters.OrderingFilter(fields=(('created_at', 'created_at'), ('price', 'price')))
+
+    class Meta:
+        model = Unit
+        fields = ['unit_status', 'unit_type', 'project']
